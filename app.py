@@ -597,6 +597,54 @@ async def skip_pattern():
     state.skip_requested = True
     return {"success": True}
 
+@app.post("/shutdown")
+async def shutdown_system():
+    """Gracefully shutdown the system."""
+    logger.info("Received shutdown request from UI")
+    try:
+        # Stop any running patterns
+        pattern_manager.stop_actions()
+        
+        # Turn off LED controller if available
+        if state.led_controller:
+            state.led_controller.set_power(0)
+        
+        # Save state
+        state.save()
+        
+        # Disconnect from device if connected
+        if state.conn and state.conn.is_connected():
+            state.conn.disconnect()
+        
+        logger.info("System shutdown completed successfully")
+        
+        # Schedule the actual system shutdown after a short delay
+        # to allow the response to be sent back to the client
+        import threading
+        import subprocess
+        
+        def delayed_shutdown():
+            import time
+            time.sleep(1)  # Give time for response to be sent
+            try:
+                # Use systemctl if available, otherwise use shutdown command
+                subprocess.run(["systemctl", "poweroff"], check=False)
+                subprocess.run(["shutdown", "-h", "now"], check=False)
+                # Fallback to direct poweroff command
+                subprocess.run(["poweroff"], check=False)
+            except Exception as e:
+                logger.error(f"Failed to shutdown system: {e}")
+        
+        shutdown_thread = threading.Thread(target=delayed_shutdown)
+        shutdown_thread.daemon = True
+        shutdown_thread.start()
+        
+        return {"success": True, "message": "System shutdown initiated"}
+        
+    except Exception as e:
+        logger.error(f"Error during shutdown: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 def signal_handler(signum, frame):
     """Handle shutdown signals gracefully but forcefully."""
     logger.info("Received shutdown signal, cleaning up...")

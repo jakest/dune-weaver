@@ -2143,3 +2143,38 @@ async function skipPattern() {
         logMessage('Error skipping pattern', 'error');
     }
 }
+
+async function shutdownSystem() {
+    // Show confirmation dialog
+    const confirmed = confirm('Are you sure you want to shutdown the system? This will power off the device.');
+    
+    if (!confirmed) {
+        return;
+    }
+    
+    try {
+        logMessage('Initiating system shutdown...', LOG_TYPE.WARNING);
+        
+        const response = await fetch('/shutdown', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            logMessage('System shutdown initiated successfully', LOG_TYPE.SUCCESS);
+            
+            // Show a final message before the system goes down
+            setTimeout(() => {
+                logMessage('System is shutting down...', LOG_TYPE.INFO);
+            }, 1000);
+        } else {
+            const errorData = await response.json();
+            logMessage(`Failed to shutdown system: ${errorData.detail}`, LOG_TYPE.ERROR);
+        }
+    } catch (error) {
+        logMessage(`Error during shutdown: ${error.message}`, LOG_TYPE.ERROR);
+    }
+}

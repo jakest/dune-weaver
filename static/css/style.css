@@ -392,7 +392,9 @@ button.warn:hover {
     background: var(--color-warning);
 }
 
-button.warning:hover{}
+button.danger:hover {
+    background: var(--color-error);
+}
 
 /* App Layout */
 .app {
@@ -1528,6 +1530,10 @@ input[type="number"]:focus {
 
 :root[data-theme="dark"] button.warn:hover {
     background: var(--color-warning) !important;
+}
+
+:root[data-theme="dark"] button.danger:hover {
+    background: var(--color-error) !important;
 }
 
 /* Update selection container button hover in dark mode */
